@@ -1,24 +1,21 @@
-// .github/scripts/calculate-dqr.js
-const fs = require("fs");
+const fs = require('fs');
+const path = require('path');
 
-const logFile = ".github/deployment_logs.json";
+const logsPath = path.join(__dirname, 'deployment_logs.json');
 
-const lines = fs.readFileSync(logFile, "utf-8").trim().split("\n");
+if (!fs.existsSync(logsPath)) {
+  console.error('deployment_logs.json file not found!');
+  process.exit(1);
+}
 
-let total = 0;
-let goodDeployments = 0;
+const logs = JSON.parse(fs.readFileSync(logsPath, 'utf-8'));
 
-lines.forEach((line) => {
-  try {
-    const log = JSON.parse(line);
-    total++;
-    if (log.status === "success" && log.rollback === false) {
-      goodDeployments++;
-    }
-  } catch (e) {
-    console.error("Bad log line:", line);
-  }
-});
+// Compute DQR:
+// DQR = (count of successful deployments without rollback) / (total deployments) * 100
 
-const dqr = total === 0 ? 0 : (goodDeployments / total) * 100;
-console.log(`✅ Deployment Quality Rate: ${dqr.toFixed(2)}% (${goodDeployments}/${total})`);
+const totalDeployments = logs.length;
+const successfulWithoutRollback = logs.filter(log => log.status === 'success' && log.rollback === 'false').length;
+
+const dqr = totalDeployments === 0 ? 0 : (successfulWithoutRollback / totalDeployments) * 100;
+
+console.log(`Deployment Quality Rate: ${dqr.toFixed(2)}%`);
