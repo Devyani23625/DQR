@@ -1,22 +1,25 @@
-const fs = require('fs');
-const args = {};
-process.argv.slice(2).forEach((arg, i, arr) => {
-  if (arg.startsWith('--')) {
-    const key = arg.slice(2);
-    const value = arr[i + 1] && !arr[i + 1].startsWith('--') ? arr[i + 1] : true;
-    args[key] = value;
-  }
-});
+// .github/scripts/log-deployment.js
 
+const fs = require("fs");
+const path = require("path");
 
-const log = {
-  deployment_id: process.env.GITHUB_RUN_ID,
-  repo: process.env.GITHUB_REPOSITORY,
-  status: args.status || 'failed',
-  rollback: args.rollback === 'true',
-  reverted_to: args.reverted_to || null,
-  version: args.version || null,
-  timestamp: new Date().toISOString()
+const args = process.argv.slice(2);
+const getArg = (flag) => {
+  const index = args.indexOf(flag);
+  return index !== -1 ? args[index + 1] : null;
 };
 
-fs.writeFileSync('deployment_logs.json', JSON.stringify([log], null, 2));
+const logFilePath = path.join(process.cwd(), ".github/deployment-log.jsonl");
+
+const log = {
+  deployment_id: `${Date.now()}`,
+  repo: process.env.GITHUB_REPOSITORY,
+  status: getArg("--status") || "unknown",
+  rollback: getArg("--rollback") === "true",
+  reverted_to: getArg("--reverted_to") || null,
+  version: getArg("--version") || "n/a",
+  timestamp: new Date().toISOString(),
+};
+
+fs.appendFileSync(logFilePath, JSON.stringify(log) + "\n");
+console.log("Logged:", log);
