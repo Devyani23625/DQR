@@ -1,0 +1,44 @@
+# .github/workflows/rollback.yml
+name: Rollback Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      rollback_from:
+        description: "Version that failed"
+        required: true
+      rollback_to:
+        description: "Version to rollback to"
+        required: true
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Perform Rollback
+        run: |
+          echo "Rolling back from ${{ github.event.inputs.rollback_from }} to ${{ github.event.inputs.rollback_to }}"
+          # TODO: Replace this with your actual rollback command
+
+      - name: 🔍 Debug - Check script path
+        run: |
+          echo "Current working directory: $(pwd)"
+          echo "List all files:"
+          find . -type f
+
+      - name: Log Rollback
+        run: |
+          node .github/scripts/log-deployment.js \
+            --status failed \
+            --version ${{ github.event.inputs.rollback_from }} \
+            --rollback true \
+            --reverted_to ${{ github.event.inputs.rollback_to }}
+      - name: Upload Rollback Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollback-log
+          path: deployment_logs.json
