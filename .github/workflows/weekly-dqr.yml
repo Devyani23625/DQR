@@ -1,7 +1,7 @@
-name: Weekly Deployment Quality Report
+name: Deployment Quality Report
 
 on:
-  workflow_dispatch:  # ← Add this only for manual runs for now
+  workflow_dispatch:
 
 jobs:
   report:
@@ -11,5 +11,17 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Calculate DQR
+      - name: Download deployment log artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-log
+          path: .github/scripts
+        continue-on-error: true  # Ignore if no previous logs exist
+
+      - name: List downloaded files (debug)
+        run: |
+          echo "Downloaded artifacts:"
+          find .github/scripts -type f
+
+      - name: Run DQR Calculation
         run: node .github/scripts/calculate-dqr.js
