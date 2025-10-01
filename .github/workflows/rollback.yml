@@ -29,7 +29,25 @@ jobs:
           echo "Current working directory: $(pwd)"
           echo "List all files:"
           find . -type f
+      - name: Save Rollback Log
+        run: |
+          echo '[
+            {
+              "deployment_id": "${{ github.run_id }}",
+              "app": "my-app",
+              "version": "${{ github.event.inputs.rollback_from }}",
+              "status": "failed",
+              "rollback": true,
+              "reverted_to": "${{ github.event.inputs.rollback_to }}",
+              "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+            }
+          ]' > deployment_logs.json
 
+      - name: Upload Rollback Log Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-log
+          path: deployment_logs.json
       - name: Log Rollback
         run: |
           node .github/scripts/log-deployment.js \
