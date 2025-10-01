@@ -1,0 +1,15 @@
+# .github/workflows/weekly-dqr.yml
+name: Weekly Deployment Quality Report
+
+on:
+  schedule:
+    - cron: '0 10 * * 1' # every Monday at 10:00 UTC
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Calculate DQR
+        run: node .github/scripts/calculate-dqr.js
