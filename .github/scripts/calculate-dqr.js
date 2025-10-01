@@ -1,7 +1,7 @@
 // .github/scripts/calculate-dqr.js
 const fs = require("fs");
 
-const logFile = ".github/deployment-logs.json";
+const logFile = ".github/deployment_logs.json";
 
 const lines = fs.readFileSync(logFile, "utf-8").trim().split("\n");
 
