@@ -9,7 +9,7 @@ const getArg = (flag) => {
   return index !== -1 ? args[index + 1] : null;
 };
 
-const logFilePath = path.join(process.cwd(), ".github/deployment-log.jsonl");
+const logFilePath = path.join(process.cwd(), ".github/deployment_logs.json");
 
 const log = {
   deployment_id: `${Date.now()}`,
