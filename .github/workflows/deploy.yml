@@ -1,46 +1,38 @@
-name: Deployment Pipeline
- 
+name: Deploy App
+
 on:
-  push:
-    branches: [main]
- 
+  workflow_dispatch:
+    inputs:
+      rollback:
+        description: 'Is this a rollback deployment?'
+        required: false
+        default: 'false'
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
- 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
- 
-      - name: Run Deployment Script
+
+      - name: Set rollback input
+        run: echo "ROLLBACK=${{ github.event.inputs.rollback }}" >> $GITHUB_ENV
+
+      - name: Simulate Deploy
+        run: echo "Deploying..."  # replace with actual deploy
+
+      - name: Save Deployment Metadata
         run: |
-         chmod +x .github/scripts/deploy.sh 
-         .github/scripts/deploy.sh 
- 
-      - name: Save Successful Version for Rollback
-        if: success()
-        run: |
-          echo "📦 Saving backup of deployed version..."
-        
-          cp -r deployed_version successful_version
- 
-      - name: Upload Deployment Log Artifact
-        if: success()
+          echo '[{
+            "deployment_id": "${{ github.run_id }}",
+            "repo": "${{ github.repository }}",
+            "status": "success",
+            "rollback": '${{ env.ROLLBACK }}',
+            "timestamp": "${{ github.run_started_at }}"
+          }]' > deployments_log.json
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: deployment-log
-          path: logs/deployment_log.json
- 
-      - name: Upload Rollback Backup Artifact
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: rollback-backup
-          path: logs/deployment_log.json
-
-      - name: Rollback on Failure
-        if: failure()
-        run: |
-         chmod +x .github/scripts/rollback.sh
-         .github/scripts/rollback.sh
- 
+          path: deployment_logs.json
