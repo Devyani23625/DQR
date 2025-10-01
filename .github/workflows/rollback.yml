@@ -48,15 +48,4 @@ jobs:
         with:
           name: deployment-log
           path: deployment_logs.json
-      - name: Log Rollback
-        run: |
-          node .github/scripts/log-deployment.js \
-            --status failed \
-            --version ${{ github.event.inputs.rollback_from }} \
-            --rollback true \
-            --reverted_to ${{ github.event.inputs.rollback_to }}
-      - name: Upload Rollback Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: rollback-log
-          path: deployment_logs.json
+      
