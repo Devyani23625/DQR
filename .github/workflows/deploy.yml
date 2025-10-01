@@ -29,7 +29,7 @@ jobs:
             "status": "success",
             "rollback": '${{ env.ROLLBACK }}',
             "timestamp": "${{ github.run_started_at }}"
-          }]' > deployments_log.json
+          }]' > deployment_logs.json
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
