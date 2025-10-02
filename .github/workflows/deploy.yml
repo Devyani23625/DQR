@@ -30,7 +30,29 @@ jobs:
             "rollback": '${{ env.ROLLBACK }}',
             "timestamp": "${{ github.run_started_at }}"
           }]' > deployment_logs.json
+      - name: Append to Deployment History and Push
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}  # Add this in your repo secrets
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git clone https://x-access-token:${GH_PAT}@github.com/${{ github.repository }} repo
+          cd repo
 
+          mkdir -p .github/data
+
+          DEPLOY_LOG_FILE=".github/data/deployments.json"
+
+          if [ ! -f "$DEPLOY_LOG_FILE" ]; then
+            echo "[]" > "$DEPLOY_LOG_FILE"
+          fi
+
+          jq --argjson new_entry "$(cat ../deployment_logs.json | jq '.[0]')" \
+             '. += [$new_entry]' "$DEPLOY_LOG_FILE" > tmp.json && mv tmp.json "$DEPLOY_LOG_FILE"
+
+          git add "$DEPLOY_LOG_FILE"
+          git commit -m "Update deployment log: ${{ github.run_id }}"
+          git push origin HEAD:${{ github.ref_name }}
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
