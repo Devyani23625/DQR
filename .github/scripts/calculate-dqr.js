@@ -1,21 +1,24 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const logsPath = path.join(__dirname, 'deployment_logs.json');
+// Load deployment log (last run)
+const logPath = path.join(__dirname, "deployment_logs.json");
 
-if (!fs.existsSync(logsPath)) {
-  console.error('deployment_logs.json file not found!');
-  process.exit(1);
-}
+// Or load history for all runs:
+// const logPath = path.join(__dirname, "../data/deployments.json");
 
-const logs = JSON.parse(fs.readFileSync(logsPath, 'utf-8'));
+const data = JSON.parse(fs.readFileSync(logPath, "utf8"));
 
-// Compute DQR:
-// DQR = (count of successful deployments without rollback) / (total deployments) * 100
+// Basic DQR example:
+// Success rate = (successful deployments / total deployments) * 100
+const total = data.length;
+const successCount = data.filter(d => d.status === "success").length;
+const failCount = total - successCount;
+const rollbackCount = data.filter(d => d.rollback === true).length;
 
-const totalDeployments = logs.length;
-const successfulWithoutRollback = logs.filter(log => log.status === 'success' && log.rollback === 'false').length;
-
-const dqr = totalDeployments === 0 ? 0 : (successfulWithoutRollback / totalDeployments) * 100;
-
-console.log(`Deployment Quality Rate: ${dqr.toFixed(2)}%`);
+console.log("📊 Deployment Quality Report:");
+console.log(`Total Deployments: ${total}`);
+console.log(`✅ Successful: ${successCount}`);
+console.log(`❌ Failed: ${failCount}`);
+console.log(`↩️ Rollbacks: ${rollbackCount}`);
+console.log(`📈 DQR (Success %): ${(successCount / total * 100).toFixed(2)}%`);
