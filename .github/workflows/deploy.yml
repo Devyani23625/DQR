@@ -1,8 +1,5 @@
 name: Deploy App
 
-permissions:
-  contents: write   # allow GITHUB_TOKEN to push logs
-
 on:
   workflow_dispatch:
     inputs:
@@ -10,6 +7,9 @@ on:
         description: 'Is this a rollback deployment?'
         required: false
         default: 'false'
+
+permissions:
+  contents: write   # required to push with GITHUB_TOKEN
 
 jobs:
   deploy:
@@ -22,7 +22,7 @@ jobs:
         run: echo "ROLLBACK=${{ github.event.inputs.rollback }}" >> $GITHUB_ENV
 
       - name: Simulate Deploy
-        run: echo "🚀 Deploying..."  # replace with actual deploy command
+        run: echo "🚀 Deploying..."  # replace with actual deploy commands
 
       - name: Save Deployment Metadata
         run: |
@@ -50,6 +50,37 @@ jobs:
             echo "[]" > "$DEPLOY_LOG_FILE"
           fi
 
-          jq --slurpfile new_entry ../deployment_logs.json \
-          '. += $new_entry' "$DEPLOY_LOG_FILE" > tmp.json && mv tmp.json "$DEPLOY_LOG_FILE"
+          jq --argjson new_entry "$(cat ../deployment_logs.json | jq '.[0]')" \
+             '. += [$new_entry]' "$DEPLOY_LOG_FILE" > tmp.json && mv tmp.json "$DEPLOY_LOG_FILE"
 
+          git add "$DEPLOY_LOG_FILE"
+          git commit -m "Update deployment log: ${{ github.run_id }}" || echo "No changes to commit"
+          git push origin HEAD:main
+
+      # ✅ Upload artifacts
+      - name: Upload Raw Deployment Log
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-log
+          path: deployment_logs.json
+
+      - name: Upload Deployment History
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-history
+          path: repo/.github/data/deployments.json
+
+  dqr:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download Deployment Log Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-log
+          path: .github/scripts
+
+      - name: Run DQR Script
+        run: node .github/scripts/calculate-dqr.js
