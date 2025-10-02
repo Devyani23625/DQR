@@ -50,4 +50,6 @@ jobs:
             echo "[]" > "$DEPLOY_LOG_FILE"
           fi
 
-          jq --argjson new_entry "$(cat ../_
+          jq --slurpfile new_entry ../deployment_logs.json \
+          '. += $new_entry' "$DEPLOY_LOG_FILE" > tmp.json && mv tmp.json "$DEPLOY_LOG_FILE"
+
