@@ -85,3 +85,12 @@ jobs:
 
       - name: Run DQR Script
         run: node .github/scripts/calculate-dqr.js
+
+              - name: Commit DQR Report
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add DQR.md
+          git commit -m "📊 Update DQR report"
+          git push origin HEAD:main
+
