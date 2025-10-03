@@ -1,24 +1,28 @@
 const fs = require("fs");
-const path = require("path");
+const path = ".github/data/deployments.json";
 
-// Load deployment log (last run)
-const logPath = path.join(__dirname, "deployment_logs.json");
+function calculateDQR(logs) {
+  const total = logs.length;
+  const cleanDeploys = logs.filter(entry => entry.status === "success" && entry.rollback === false).length;
+  const rate = total === 0 ? 0 : (cleanDeploys / total) * 100;
+  return { total, cleanDeploys, dqr: rate.toFixed(2) };
+}
 
-// Or load history for all runs:
-// const logPath = path.join(__dirname, "../data/deployments.json");
+function main() {
+  if (!fs.existsSync(path)) {
+    console.error("Deployment log not found.");
+    process.exit(1);
+  }
 
-const data = JSON.parse(fs.readFileSync(logPath, "utf8"));
+  const logs = JSON.parse(fs.readFileSync(path));
+  const result = calculateDQR(logs);
 
-// Basic DQR example:
-// Success rate = (successful deployments / total deployments) * 100
-const total = data.length;
-const successCount = data.filter(d => d.status === "success").length;
-const failCount = total - successCount;
-const rollbackCount = data.filter(d => d.rollback === true).length;
+  console.log(`📊 DQR Report:`);
+  console.log(`➡️ Total Deployments: ${result.total}`);
+  console.log(`✅ Successful without Rollback: ${result.cleanDeploys}`);
+  console.log(`📈 Deployment Quality Rate: ${result.dqr}%`);
 
-console.log("📊 Deployment Quality Report:");
-console.log(`Total Deployments: ${total}`);
-console.log(`✅ Successful: ${successCount}`);
-console.log(`❌ Failed: ${failCount}`);
-console.log(`↩️ Rollbacks: ${rollbackCount}`);
-console.log(`📈 DQR (Success %): ${(successCount / total * 100).toFixed(2)}%`);
+  fs.writeFileSync(".github/data/dqr.json", JSON.stringify(result, null, 2));
+}
+
+main();
