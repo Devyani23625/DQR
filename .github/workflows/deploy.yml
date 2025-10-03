@@ -27,12 +27,13 @@ jobs:
       - name: Save Deployment Metadata
         run: |
           echo '[{
-            "deployment_id": "${{ github.run_id }}",
-            "repo": "${{ github.repository }}",
-            "status": "success",
-            "rollback": '${{ env.ROLLBACK }}',
-            "timestamp": "${{ github.run_started_at }}"
+           "deployment_id": "${{ github.run_id }}",
+           "repo": "${{ github.repository }}",
+           "status": "success",
+           "rollback": '${{ env.ROLLBACK }}',
+           "timestamp": "${{ github.run_started_at }}"
           }]' > deployment_logs.json
+
 
       - name: Append to Deployment History and Push
         env:
