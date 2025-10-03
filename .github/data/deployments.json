@@ -40,5 +40,12 @@
     "status": "success",
     "rollback": false,
     "timestamp": ""
+  },
+  {
+    "deployment_id": "18213426479",
+    "repo": "Devyani23625/DQR",
+    "status": "success",
+    "rollback": false,
+    "timestamp": ""
   }
 ]
