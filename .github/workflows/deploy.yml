@@ -89,12 +89,13 @@ jobs:
       - name: Run DQR Script
         run: node .github/scripts/calculate-dqr.js
 
-      - name: Commit DQR Report
+         - name: Commit DQR Report
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
+          git pull origin main --rebase  # 👈 Add this line
           git add DQR.md
-          git commit -m "📊 Update DQR report"
+          git commit -m "📊 Update DQR report" || echo "No changes to commit"
           git push origin HEAD:main
