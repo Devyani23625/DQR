@@ -9,7 +9,7 @@ on:
         default: 'false'
 
 permissions:
-  contents: write   # Required for GITHUB_TOKEN to push changes
+  contents: write
 
 jobs:
   deploy:
@@ -23,21 +23,19 @@ jobs:
         run: echo "ROLLBACK=${{ github.event.inputs.rollback }}" >> $GITHUB_ENV
 
       - name: Simulate Deploy
-        run: echo "🚀 Deploying..."  # Replace with actual deploy commands
+        run: echo "🚀 Deploying..."
 
       - name: Save Deployment Metadata
         env:
           ROLLBACK: ${{ github.event.inputs.rollback }}
         run: |
-          cat > deployment_logs.json <<EOF
-[{
-  "deployment_id": "${{ github.run_id }}",
-  "repo": "${{ github.repository }}",
-  "status": "success",
-  "rollback": ${ROLLBACK},
-  "timestamp": "${{ github.run_started_at }}"
-}]
-EOF
+          echo '[{
+            "deployment_id": "'"${{ github.run_id }}"'",
+            "repo": "'"${{ github.repository }}"'",
+            "status": "success",
+            "rollback": '"${ROLLBACK}"',
+            "timestamp": "'"${{ github.run_started_at }}"'"
+          }]' > deployment_logs.json
 
       - name: Append to Deployment History and Push
         env:
@@ -55,13 +53,14 @@ EOF
             echo "[]" > "$DEPLOY_LOG_FILE"
           fi
 
+          # Add new deployment log entry
           jq --argjson new_entry "$(cat ../deployment_logs.json | jq '.[0]')" \
             '. += [$new_entry]' "$DEPLOY_LOG_FILE" > tmp.json && mv tmp.json "$DEPLOY_LOG_FILE"
 
           git add "$DEPLOY_LOG_FILE"
           git commit -m "Update deployment log: ${{ github.run_id }}" || echo "No changes to commit"
 
-          # Pull latest changes to avoid conflicts before pushing
+          # Pull latest changes to avoid conflicts
           git pull --rebase origin main || true
           git push origin HEAD:main
 
@@ -82,8 +81,7 @@ EOF
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Download Deployment History
         uses: actions/download-artifact@v4
