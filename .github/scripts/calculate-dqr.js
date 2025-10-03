@@ -1,28 +1,31 @@
-const fs = require("fs");
-const path = ".github/data/deployments.json";
+const fs = require('fs');
+const path = require('path');
+
+const logPath = path.join('.github', 'data', 'deployments.json');
+const outputPath = 'DQR.md';
 
 function calculateDQR(logs) {
   const total = logs.length;
-  const cleanDeploys = logs.filter(entry => entry.status === "success" && entry.rollback === false).length;
-  const rate = total === 0 ? 0 : (cleanDeploys / total) * 100;
-  return { total, cleanDeploys, dqr: rate.toFixed(2) };
+  const good = logs.filter(d => d.status === "success" && d.rollback === false).length;
+
+  const rate = total === 0 ? 0 : ((good / total) * 100).toFixed(2);
+  return { total, good, rate };
 }
 
-function main() {
-  if (!fs.existsSync(path)) {
-    console.error("Deployment log not found.");
-    process.exit(1);
-  }
+const logs = JSON.parse(fs.readFileSync(logPath));
+const { total, good, rate } = calculateDQR(logs);
 
-  const logs = JSON.parse(fs.readFileSync(path));
-  const result = calculateDQR(logs);
+const markdown = `
+# 📊 Deployment Quality Rate (DQR)
 
-  console.log(`📊 DQR Report:`);
-  console.log(`➡️ Total Deployments: ${result.total}`);
-  console.log(`✅ Successful without Rollback: ${result.cleanDeploys}`);
-  console.log(`📈 Deployment Quality Rate: ${result.dqr}%`);
+- **Total Deployments:** ${total}
+- ✅ **Successful (no rollback):** ${good}
+- ❌ **Rollbacks:** ${total - good}
 
-  fs.writeFileSync(".github/data/dqr.json", JSON.stringify(result, null, 2));
-}
+> **Deployment Quality Rate:** \`${rate}%\`
 
-main();
+_Last updated: ${new Date().toISOString()}_
+`;
+
+fs.writeFileSync(outputPath, markdown);
+console.log("✅ DQR calculated and written to DQR.md");
