@@ -9,7 +9,7 @@ on:
         default: 'false'
 
 permissions:
-  contents: write   # required to push with GITHUB_TOKEN
+  contents: write   # Required to push with GITHUB_TOKEN
 
 jobs:
   deploy:
@@ -22,18 +22,19 @@ jobs:
         run: echo "ROLLBACK=${{ github.event.inputs.rollback }}" >> $GITHUB_ENV
 
       - name: Simulate Deploy
-        run: echo "🚀 Deploying..."  # replace with actual deploy commands
+        run: echo "🚀 Deploying..."  # Replace with actual deploy commands
 
       - name: Save Deployment Metadata
         run: |
-          echo '[{
-           "deployment_id": "${{ github.run_id }}",
-           "repo": "${{ github.repository }}",
-           "status": "success",
-           "rollback": '${{ env.ROLLBACK }}',
-           "timestamp": "${{ github.run_started_at }}"
-          }]' > deployment_logs.json
-
+          cat <<EOF > deployment_logs.json
+          [{
+            "deployment_id": "${{ github.run_id }}",
+            "repo": "${{ github.repository }}",
+            "status": "success",
+            "rollback": ${ROLLBACK},
+            "timestamp": "${{ github.run_started_at }}"
+          }]
+          EOF
 
       - name: Append to Deployment History and Push
         env:
@@ -52,4 +53,4 @@ jobs:
           fi
 
           jq --argjson new_entry "$(cat ../deployment_logs.json | jq '.[0]')" \
-             '. += [$new_entry]' "$DEPLOY_LOG_FILE" > tmp.json && mv tmp.json "$DEPLOY_LO]()
+            '. += [$new_entry]' "$DEPLOY_LOG_FILE" > tmp.json && mv tmp.json "$DEPLOY_LOG]()
