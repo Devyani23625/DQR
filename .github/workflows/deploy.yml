@@ -9,7 +9,7 @@ on:
         default: 'false'
 
 permissions:
-  contents: write
+  contents: write   # Required for pushing with GITHUB_TOKEN
 
 jobs:
   deploy:
@@ -23,19 +23,19 @@ jobs:
         run: echo "ROLLBACK=${{ github.event.inputs.rollback }}" >> $GITHUB_ENV
 
       - name: Simulate Deploy
-        run: echo "🚀 Deploying..."
+        run: echo "🚀 Deploying..."  # Replace with your actual deploy commands
 
       - name: Save Deployment Metadata
-        env:
-          ROLLBACK: ${{ github.event.inputs.rollback }}
         run: |
-          echo '[{
-            "deployment_id": "'"${{ github.run_id }}"'",
-            "repo": "'"${{ github.repository }}"'",
+          cat <<EOF > deployment_logs.json
+          [{
+            "deployment_id": "${{ github.run_id }}",
+            "repo": "${{ github.repository }}",
             "status": "success",
-            "rollback": '"${ROLLBACK}"',
-            "timestamp": "'"${{ github.run_started_at }}"'"
-          }]' > deployment_logs.json
+            "rollback": ${ROLLBACK},
+            "timestamp": "${{ github.run_started_at }}"
+          }]
+          EOF
 
       - name: Append to Deployment History and Push
         env:
@@ -53,22 +53,13 @@ jobs:
             echo "[]" > "$DEPLOY_LOG_FILE"
           fi
 
-          # Add new deployment log entry
           jq --argjson new_entry "$(cat ../deployment_logs.json | jq '.[0]')" \
             '. += [$new_entry]' "$DEPLOY_LOG_FILE" > tmp.json && mv tmp.json "$DEPLOY_LOG_FILE"
 
           git add "$DEPLOY_LOG_FILE"
           git commit -m "Update deployment log: ${{ github.run_id }}" || echo "No changes to commit"
-
-          # Pull latest changes to avoid conflicts
           git pull --rebase origin main || true
           git push origin HEAD:main
-
-      - name: Upload Raw Deployment Log
-        uses: actions/upload-artifact@v4
-        with:
-          name: deployment-log
-          path: deployment_logs.json
 
       - name: Upload Deployment History
         uses: actions/upload-artifact@v4
@@ -81,24 +72,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-
       - name: Download Deployment History
         uses: actions/download-artifact@v4
         with:
           name: deployment-history
           path: .github/data
 
-      - name: Run DQR Script
-        run: node .github/scripts/calculate-dqr.js
-
-      - name: Commit DQR Report
+      - name: Clone Repo for DQR Commit
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git pull --rebase origin main || true
+          git clone https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }} repo
+
+      - name: Run DQR Script
+        run: |
+          cp .github/data/deployments.json repo/.github/data/deployments.json
+          cd repo
+          node .github/scripts/calculate-dqr.js
+
+      - name: Commit DQR Report
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd repo
           git add DQR.md
           git commit -m "📊 Update DQR report" || echo "No changes to commit"
+          git pull --rebase origin main || true
           git push origin HEAD:main
