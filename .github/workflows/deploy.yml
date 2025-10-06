@@ -23,7 +23,7 @@ jobs:
         run: echo "ROLLBACK=${{ github.event.inputs.rollback }}" >> $GITHUB_ENV
 
       - name: Simulate Deploy
-        run: echo "🚀 Deploying..."  # Replace with your actual deploy commands
+        run: echo " Deploying..."  # Replace with your actual deploy commands
 
       - name: Save Deployment Metadata
         run: |
@@ -98,6 +98,6 @@ jobs:
         run: |
           cd repo
           git add DQR.md
-          git commit -m "📊 Update DQR report" || echo "No changes to commit"
+          git commit -m " Update DQR report" || echo "No changes to commit"
           git pull --rebase origin main || true
           git push origin HEAD:main
